@@ -1,0 +1,1 @@
+For this demoe an ESP32 WROOM devkit V1 was used, you can use other ESP's but be aware to change pins in the code accordingly.
