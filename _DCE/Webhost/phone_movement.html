@@ -1,0 +1,131 @@
+<!DOCTYPE html>	 
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" type="text/css" href="https://df-demo.id.tue.nl/assets/stylesheets/picoCSS/pico.indigo.min.css">
+	<link rel="stylesheet" type="text/css" href="styles.css">
+	<script type="text/javascript" src="https://df-demo.id.tue.nl/assets/javascripts/p5.min.js"></script>
+	<script type="text/javascript" src="https://df-demo.id.tue.nl/assets/javascripts/p5.sound.min.js"></script>
+	<script type="text/javascript" src="https://df-demo.id.tue.nl/assets/javascripts/oocsi-web.js"></script>
+	<script type="text/javascript" src="fantastic-things.js"></script>
+</head>
+<body>
+	<div id="overlayText">Place your tool on the reader</div>
+	<img id="displayImage" src="" alt="Ask Hedde to add pictures.">
+	
+	<script type="text/javascript">
+    	let tag = null; // Store last received tag
+    	let win = null;
+    	let final = false;
+    	let value;
+    	let d = [];
+    	document.body.style.backgroundColor = 'black';
+    
+    	function thing() {
+    		fantasticThings.register('phone movement', 'phone', [], ['value', 'd1', 'd2', 'tag', 'win', 'final']);
+    		
+    		const channelSplit = globalSettings.channel.split("/");
+    		const team = channelSplit[1]; // Get the part after "DCE2025/"
+    
+    		OOCSI.subscribe(globalSettings.channel, function(msg) {
+    			if (msg.data.tag !== undefined) {
+    				tag = msg.data.tag; // Store the latest tag persistently
+    			}
+                if (msg.data.final !== undefined) {
+                    final = msg.data.final; // Store the latest win state
+                }
+                console.log("Received final value:", final);
+
+    			let imgElement = document.getElementById("displayImage");
+    			let textOverlay = document.getElementById("overlayText");
+                
+                if (final === false) {
+                    // Handle tag-based behavior if win is null or undefined
+                    if (tag !== null) {
+                        textOverlay.style.display = 'none';
+                    }
+                
+                    switch (tag) {
+                        case 0:
+                            document.body.style.backgroundColor = 'black';
+                            imgElement.style.display = 'none';
+                            break;
+                        case 1:
+                            document.body.style.backgroundColor = 'red';
+                            imgElement.src = team + "/1.png";
+                            imgElement.style.display = 'block';
+                            break;
+                        case 2:
+                            document.body.style.backgroundColor = 'green';
+                            imgElement.src = team + "/2.png";
+                            imgElement.style.display = 'block';
+                            break;
+                        case 3:
+                            document.body.style.backgroundColor = 'blue';
+                            imgElement.src = team + "/3.png";
+                            imgElement.style.display = 'block';
+                            break;
+                        case 4:
+                            document.body.style.backgroundColor = 'white';
+                            imgElement.src = team + "/4.png";
+                            imgElement.style.display = 'block';
+                            break;
+                        default:
+                            console.log("Received unknown tag:", tag);
+                    }
+                } else if (msg.data.win !== undefined) {
+                    win = msg.data.win; // Store the latest win state
+                    imgElement.style.display = "none";
+                    textOverlay.style.display = "block";
+
+                    if (win === true) {
+                        document.body.style.backgroundColor = "green"; // Win state
+                        textOverlay.innerText = "YOU ESCAPED!";
+                    } else {
+                        document.body.style.backgroundColor = "red"; // Fail state
+                        textOverlay.innerText = "YOU GOT HIT BY A METEOR! TRY AGAIN!";
+                    }
+                } else {
+                    document.body.style.backgroundColor = 'black';
+                    textOverlay.style.display = 'block'
+                    imgElement.style.display = "none";
+                    textOverlay.innerText = "Fix the wires! (hint: think of the lights of the different tools)";
+                }
+            });
+    		
+            d.push(fantasticThings.data('d1'))
+            d.push(fantasticThings.data('d2'))
+            
+    		value = fantasticThings.data('value');
+    		
+    		fantasticThings.requestDeviceMotion();
+    	}
+    
+    	function setup() {
+    		let canvas = createCanvas(windowWidth, windowHeight, WEBGL);
+    		canvas.parent('canvasContainer');
+    	}
+    
+    	function draw() {
+    		let mappedValue = 0;
+            
+    		if (tag === 3) {
+    			// Use phone tilt for tag 3
+    			let tiltMagnitude = degrees(rotationX);
+    			mappedValue = round(map(tiltMagnitude, 45, -45, 0, 10));
+    		} else if (tag === 1 || tag === 2) {
+    			// Use acceleration for tag 1 and 2
+    			let accelMagnitude = sqrt(sq(accelerationX) + sq(accelerationY) + sq(accelerationZ));
+    			mappedValue = round(map(accelMagnitude, 0, 40, 0, 10));
+    		} else if (tag === 4) {
+    		    d[0](round(map(degrees(rotationX), -90, 90, -1, 1)))
+    		    d[1](round(map(degrees(rotationY), -90, 90, -1, 1)))
+    		}
+    
+    		value(mappedValue);
+    		fantasticThings.activity();
+    	}
+    </script>
+</body>
+</html>
