@@ -16,12 +16,14 @@
 	
 	<script type="text/javascript">
     	let tag = null; // Store last received tag
+    	let win = null;
+    	let final = false;
     	let value;
     	let d = [];
     	document.body.style.backgroundColor = 'black';
     
     	function thing() {
-    		fantasticThings.register('phone movement', 'phone', [], ['value', 'd1', 'd2', 'tag']);
+    		fantasticThings.register('phone movement', 'phone', [], ['value', 'd1', 'd2', 'tag', 'win', 'final']);
     		
     		const channelSplit = globalSettings.channel.split("/");
     		const team = channelSplit[1]; // Get the part after "DCE2025/"
@@ -30,44 +32,67 @@
     			if (msg.data.tag !== undefined) {
     				tag = msg.data.tag; // Store the latest tag persistently
     			}
-    
+                if (msg.data.final !== undefined) {
+                    final = msg.data.final; // Store the latest win state
+                }
+                console.log("Received final value:", final);
+
     			let imgElement = document.getElementById("displayImage");
     			let textOverlay = document.getElementById("overlayText");
-    
-    			if (tag !== null) {
-    				textOverlay.style.display = 'none';
-    			}
-    
-    			// Set background color and image based on tag
-    			switch (tag) {
-    				case 0:
-    					document.body.style.backgroundColor = 'black';
-    					imgElement.style.display = 'none';
-    					break;
-    				case 1:
-    					document.body.style.backgroundColor = 'red';
-    					imgElement.src = team + "/1.png";
-    					imgElement.style.display = 'block';
-    					break;
-    				case 2:
-    					document.body.style.backgroundColor = 'green';
-    					imgElement.src = team + "/2.png";
-    					imgElement.style.display = 'block';
-    					break;
-    				case 3:
-    					document.body.style.backgroundColor = 'blue';
-    					imgElement.src = team + "/3.png";
-    					imgElement.style.display = 'block';
-    					break;
-    				case 4:
-    					document.body.style.backgroundColor = 'white';
-    					imgElement.src = team + "/4.png";
-    					imgElement.style.display = 'block';
-    					break;
-    				default:
-    					console.log("Received unknown tag:", tag);
-    			}
-    		});
+                
+                if (final === false) {
+                    // Handle tag-based behavior if win is null or undefined
+                    if (tag !== null) {
+                        textOverlay.style.display = 'none';
+                    }
+                
+                    switch (tag) {
+                        case 0:
+                            document.body.style.backgroundColor = 'black';
+                            imgElement.style.display = 'none';
+                            break;
+                        case 1:
+                            document.body.style.backgroundColor = 'red';
+                            imgElement.src = team + "/1.png";
+                            imgElement.style.display = 'block';
+                            break;
+                        case 2:
+                            document.body.style.backgroundColor = 'green';
+                            imgElement.src = team + "/2.png";
+                            imgElement.style.display = 'block';
+                            break;
+                        case 3:
+                            document.body.style.backgroundColor = 'blue';
+                            imgElement.src = team + "/3.png";
+                            imgElement.style.display = 'block';
+                            break;
+                        case 4:
+                            document.body.style.backgroundColor = 'white';
+                            imgElement.src = team + "/4.png";
+                            imgElement.style.display = 'block';
+                            break;
+                        default:
+                            console.log("Received unknown tag:", tag);
+                    }
+                } else if (msg.data.win !== undefined) {
+                    win = msg.data.win; // Store the latest win state
+                    imgElement.style.display = "none";
+                    textOverlay.style.display = "block";
+
+                    if (win === true) {
+                        document.body.style.backgroundColor = "green"; // Win state
+                        textOverlay.innerText = "YOU ESCAPED!";
+                    } else {
+                        document.body.style.backgroundColor = "red"; // Fail state
+                        textOverlay.innerText = "YOU GOT HIT BY A METEOR! TRY AGAIN!";
+                    }
+                } else {
+                    document.body.style.backgroundColor = 'black';
+                    textOverlay.style.display = 'block'
+                    imgElement.style.display = "none";
+                    textOverlay.innerText = "Fix the wires! (hint: think of the lights of the different tools)";
+                }
+            });
     		
             d.push(fantasticThings.data('d1'))
             d.push(fantasticThings.data('d2'))
